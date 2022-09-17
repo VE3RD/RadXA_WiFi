@@ -1,0 +1,94 @@
+#!/bin/sh -e
+#
+# rc.local
+#
+# This script is executed at the end of each multiuser runlevel.
+# Make sure that the script will "exit 0" on success or any other
+# value on error.
+#
+# In order to enable or disable this script just change the execution
+# bits.
+#
+# By default this script does nothing.
+
+if [ -e /etc/first_boot ]; then
+    /bin/sh /etc/first_boot
+    rm /etc/first_boot
+    reboot
+fi
+
+# Temporary work around for wpa_supplicant process not working on Radxa-Zero
+# User needs to drop a file called startwifi.sh 
+if [ -f /boot/startwifi.sh ]; then
+    sudo chmod +x /boot/startwifi.sh
+    sudo /boot/startwifi.sh
+    sudo rm /boot/startwifi.sh
+fi
+
+
+# Temporary work around for wpa_supplicant process not working on Radxa-Zero
+if [ -f /boot/wpa_supplicant.conf ]; then
+        mount -o remount,rw /boot
+        mount -o remount,rw /
+        /boot/startwifi2.sh
+	mv /boot/wpa_supplicant.conf /etc/wpa_supplicant/wpa_supplicant.conf
+        exit 0
+fi
+
+# Temporary work around for wpa_supplicant process not working on Radxa-Zero
+if [ -f /etc/wpa_supplicant/wpa_supplicant.conf ]; then
+        echo "Found wpa_supplicant in /etc/wpa_supplicant"
+	sudo /usr/local/sbin/RadXA_wifi.sh
+	exit 0
+fi
+
+if [ ! -f /etc/wpa_supplicant/wpa_supplicant.conf ]; then
+        echo "No wpa_supplicant Found Start AP Mode"
+	sudo /usr/local/sbin/startapmode.sh
+        exit 0
+else
+        echo "rc.local Starting AP Mode"
+   #    sudo nmcli con up hotspot
+        sudo nmcli con up hotspot &
+        sleep 2
+        sudo systemctl restart isc-dhcp-server
+        exit 0
+fi
+
+
+# AutoGenerate SSH keys if they are missing
+if [ ! -f /etc/ssh/ssh_host_rsa_key ] || [ ! -f /etc/ssh/ssh_host_dsa_key ]; then
+        mount -o remount,rw /
+        dpkg-reconfigure openssh-server
+fi
+
+# If this is a new image, expand the filesystem
+if [ ! -f /boot/.expanded ]; then
+        mount -o remount,rw /boot
+        mount -o remount,rw /
+        touch /boot/.expanded
+        /usr/local/sbin/pistar-expand
+#        sync
+#        sync
+#        sync
+#        reboot
+#        exit 0
+fi
+
+# Pull in the Config settings from /boot if they exist there
+if [ -f /boot/Pi-Star_Config_*.zip ]; then
+        /usr/local/sbin/pistar-bootconfig.sh
+        exit 0
+fi
+
+# Pull in the WiFi settings from /boot if they exist there
+#if [ -f /boot/wpa_supplicant.conf ]; then
+#        mount -o remount,rw /boot
+#        mount -o remount,rw /
+#        mv /boot/wpa_supplicant.conf /etc/wpa_supplicant/wpa_supplicant.conf
+#        wpa_cli reconfigure wlan0
+#        reboot
+#        exit 0
+#fi
+
+exit 0
