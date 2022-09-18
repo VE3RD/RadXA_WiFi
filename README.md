@@ -19,7 +19,7 @@ This should ONLY be run if this occurs. Simptoms are total loss of connectivity 
 This script will check for the default gateway and replace it only if missing.
 This script will lock the ip and gateway into the Netmanager configuration file for the home network.
 
-RadXA_WiFi.sh :
+RadXA_wifi.sh :
 This is the main wifi configuration script. It will scroll down thru the list of networks in the 
 /etc/wpa_supplicant/supplicant.con file, sort the connections by priority and start trying to make a connection
 starting at the highest priority. 
